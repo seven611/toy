@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <title>外卖 · 打车 每日领券</title>
+  <!-- 允许的唯一外部资源：B站 Toy 官方 SDK。页面在 window.toy 不存在时仍可完整使用。 -->
+  <script src="https://s1.hdslb.com/bfs/seed/toy/app/sdk/toy-sdk.js"></script>
+  <style>
+    :root {
+      --bg1: #5b2bff;
+      --bg2: #c44bff;
+      --bg3: #ff6b9c;
+      --card: rgba(255, 255, 255, 0.96);
+      --ink: #1c1230;
+      --muted: #6b5b7a;
+      --line: rgba(255, 255, 255, 0.28);
+      --ok: #16a34a;
+      --warn: #fff3c4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: "PingFang SC", "Noto Sans SC", "Source Han Sans SC", system-ui, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(165deg, var(--bg1) 0%, var(--bg2) 48%, var(--bg3) 100%);
+      min-height: 100%;
+      -webkit-font-smoothing: antialiased;
+    }
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(40px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .bg-orb.a { width: 220px; height: 220px; background: rgba(255, 210, 255, 0.45); top: -60px; right: -40px; }
+    .bg-orb.b { width: 180px; height: 180px; background: rgba(90, 40, 255, 0.35); bottom: 10%; left: -60px; }
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 430px;
+      margin: 0 auto;
+      padding: 18px 16px 28px;
+      padding-top: calc(18px + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    }
+    .chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .chip {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: #4a2a00;
+      background: var(--warn);
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+    .chip.ghost {
+      color: #fff;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid var(--line);
+    }
+    h1 {
+      color: #fff;
+      font-size: 26px;
+      line-height: 1.25;
+      font-weight: 750;
+      letter-spacing: 0.02em;
+    }
+    .subhead {
+      color: rgba(255,255,255,0.86);
+      font-size: 13px;
+      margin: 6px 0 14px;
+      line-height: 1.5;
+    }
+    .tabs {
+      display: flex;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 4px;
+      margin-bottom: 14px;
+    }
+    .tab {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      color: rgba(255,255,255,0.82);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 9px 0;
+      border-radius: 11px;
+      cursor: pointer;
+    }
+    .tab.active { background: #fff; color: var(--ink); }
+    .list { display: flex; flex-direction: column; gap: 10px; }
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 14px 14px 12px;
+      box-shadow: 0 10px 28px rgba(70, 20, 110, 0.18);
+    }
+    .card-top { display: flex; gap: 12px; align-items: flex-start; }
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+      color: #1a1a1a;
+    }
+    .meta { flex: 1; min-width: 0; }
+    .name-row { display: flex; align-items: center; gap: 6px; }
+    .name { font-size: 16px; font-weight: 750; }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(90deg, #8b3dff, #ff4d8d);
+      border-radius: 999px;
+      padding: 2px 7px;
+      flex-shrink: 0;
+    }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .desc { font-size: 13px; line-height: 1.45; margin: 8px 0 10px; color: #3b2b4d; }
+    .row-actions { display: flex; align-items: center; gap: 10px; }
+    .max {
+      flex: 1;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .max b { color: #d12b6a; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+    .copy-btn {
+      border: 0;
+      background: linear-gradient(135deg, #6a2cff, #e04cff);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 10px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      min-width: 108px;
+    }
+    .copy-btn:active { transform: scale(0.98); }
+    .copy-btn.done { background: var(--ok); }
+    .howto-mini { margin-top: 8px; font-size: 11px; color: var(--muted); }
+    .howto {
+      margin-top: 14px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid var(--line);
+      color: #fff;
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .howto ol { padding-left: 18px; }
+    .follow {
+      margin-top: 10px;
+      background: rgba(255,255,255,0.12);
+      border: 1px dashed rgba(255,255,255,0.35);
+      color: #fff;
+      border-radius: 16px;
+      padding: 11px 12px;
+      display: none;
+    }
+    .follow.show { display: block; }
+    .follow p { font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
+    .follow .btns { display: flex; gap: 8px; }
+    .follow button {
+      border: 0;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .follow .go { background: #fff; color: #5b2bff; }
+    .follow .skip { background: transparent; color: #fff; border: 1px solid var(--line); }
+    .fine {
+      margin-top: 12px;
+      color: rgba(255,255,255,0.72);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%) translateY(16px);
+      background: rgba(28, 18, 48, 0.92);
+      color: #fff;
+      font-size: 13px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.2s ease;
+      z-index: 20;
+      max-width: 86%;
+      text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .fallback {
+      margin-top: 8px;
+      background: #f6f0ff;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      word-break: break-all;
+      display: none;
+    }
+    .empty { color: #fff; text-align: center; padding: 28px 8px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="bg-orb a"></div>
+  <div class="bg-orb b"></div>
+  <div class="wrap">
+    <div class="chip-row">
+      <span class="chip">美团、淘宝闪购、京东可领</span>
+      <span class="chip ghost">不关注也能用</span>
+    </div>
+    <h1>外卖 · 打车<br>每日领券</h1>
+    <p class="subhead">复制口令，打开对应 App 粘贴领取。目前可领的是美团外卖、淘宝闪购和京东外卖。口令过期或领不到时，以各 App 当日活动为准。</p>
+    <div class="tabs" role="tablist">
+      <button class="tab active" type="button" data-cat="food" role="tab" aria-selected="true">外卖红包</button>
+      <button class="tab" type="button" data-cat="car" role="tab" aria-selected="false">打车券</button>
+    </div>
+    <div id="list" class="list"></div>
+    <section class="howto">
+      <strong>怎么用</strong>
+      <ol>
+        <li>点卡片上的「复制口令」。</li>
+        <li>打开卡片上写的 App（美团、淘宝闪购或京东），在搜索框或领券入口粘贴。</li>
+        <li>按提示领取。</li>
+      </ol>
+      本页不会自动跳转到站外。口令过期或领不到时，以各 App 当日活动为准。
+    </section>
+    <section id="followBar" class="follow" aria-live="polite">
+      <p>想每天回来领新券，可以顺手关注或给视频三连。不关注也不影响复制口令。</p>
+      <div class="btns">
+        <button type="button" class="go" id="followGo">去关注 / 三连</button>
+        <button type="button" class="skip" id="followSkip">先不用</button>
+      </div>
+    </section>
+    <p class="fine">平台名称仅用于说明要打开哪款 App，页面未使用品牌 Logo。优惠金额以各 App 当日活动为准。</p>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script>
+    /* =====================================================================
+     * CONFIG  券数据配置（整页只改这里）
+     * ---------------------------------------------------------------------
+     * 页面只展示 live: true 的条目。food-meituan、food-eleme、food-jd 已换成真实口令（2026-11-12）；
+     * 打车仍保留在配置里方便以后加回，但不会出现在页面上。
+     * category: "food" = 外卖，"car" = 打车
+     * 本页只提供「复制口令」，不会自动打开站外链接。
+     * ===================================================================== */
+    const CONFIG = {
+      title: "外卖 · 打车 每日领券",
+      /* 绑定视频后可填写 BV 号，用于「去关注 / 三连」按钮；留空则只尝试打开作者主页 */
+      videoBvid: "",
+      coupons: [
+        {
+          id: "food-meituan",
+          category: "food",
+          name: "美团外卖红包",
+          sub: "每日可领",
+          icon_text: "美团",
+          color: "#ffd100",
+          badge: "可领",
+          desc: "把整条口令粘贴到美团，按提示领取外卖红包。金额以美团当日活动为准。",
+          max: null,
+          live: true,
+          app: "美团",
+          code: "1来美团，吃得更好，生活更好❤️复制整条信息，打开👉美团👈 http:/💰rqOTZkNGJmODE💰"
+        },
+        {
+          id: "food-eleme",
+          category: "food",
+          name: "淘宝闪购红包",
+          sub: "最高22元，可叠加",
+          icon_text: "闪购",
+          color: "#1ec8c8",
+          badge: "可领",
+          desc: "把整条口令粘贴到淘宝闪购，按提示领取。金额以当日活动为准。",
+          max: 22,
+          live: true,
+          app: "淘宝闪购",
+          code: "闪购品牌日 单单有福利\n最高22元，可叠加\n0復制口~令1:/＄6WSjXXI＄~.👉淘宝闪购APP👈【闪购品牌日 单单有福利"
+        },
+        {
+          id: "food-jd",
+          category: "food",
+          name: "京东外卖红包",
+          sub: "每日可领",
+          icon_text: "京东",
+          color: "#ff4d4f",
+          text_color: "#fff",
+          badge: "可领",
+          desc: "把整条口令粘贴到京东，按提示领取。金额以京东当日活动为准。",
+          max: null,
+          live: true,
+          app: "京东",
+          code: "15:/！I3xWb70GN23eo07o！ MU5104 ，╰+猄◐Dσσδng热门促销会场！"
+        },
+        {
+          id: "car-didi",
+          category: "car",
+          name: "滴滴打车券",
+          sub: "出行优惠 · 示例",
+          icon_text: "滴滴",
+          color: "#ff7a45",
+          text_color: "#fff",
+          badge: "",
+          desc: "示例：把口令粘贴到滴滴出行领取打车券。个人可能无法入驻滴滴联盟，见说明。",
+          max: 10,
+          app: "滴滴出行",
+          code: "【示例口令】这是示例数据，不能领券 DEMO-DIDI-0004"
+        },
+        {
+          id: "car-meituan",
+          category: "car",
+          name: "美团打车券",
+          sub: "备用通道 · 示例",
+          icon_text: "美团",
+          color: "#ffd100",
+          badge: "备选",
+          desc: "示例：若暂时没有滴滴联盟账号，可先放美团打车类优惠口令。",
+          max: 8,
+          app: "美团",
+          code: "【示例口令】这是示例数据，不能领券 DEMO-MEITUAN-CAR-0005"
+        }
+      ]
+    };
+
+    const state = { category: "food" };
+    const listEl = document.getElementById("list");
+    const toastEl = document.getElementById("toast");
+    let toastTimer = 0;
+
+    function getToy() {
+      try { return window.toy || null; } catch (e) { return null; }
+    }
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2200);
+    }
+
+    function copyText(text) {
+      return new Promise(function (resolve, reject) {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.setAttribute("readonly", "");
+          ta.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0;";
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          var ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          if (ok) { resolve("execCommand"); return; }
+        } catch (e) { /* fallback below */ }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          var done = false;
+          var timer = setTimeout(function () {
+            if (done) return;
+            done = true;
+            reject(new Error("clipboard timeout"));
+          }, 1500);
+          navigator.clipboard.writeText(text).then(function () {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            resolve("clipboard");
+          }).catch(function (err) {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            reject(err);
+          });
+          return;
+        }
+        reject(new Error("no clipboard api"));
+      });
+    }
+
+    function render() {
+      var items = (CONFIG.coupons || []).filter(function (c) { return c.category === state.category && c.live; });
+      listEl.innerHTML = "";
+      if (!items.length) {
+        listEl.innerHTML = '<div class="empty">这一类暂时没有券</div>';
+        return;
+      }
+      items.forEach(function (item) {
+        var card = document.createElement("article");
+        card.className = "card";
+        var textColor = item.text_color || "#1a1a1a";
+        var badge = item.badge ? '<span class="badge">' + escapeHtml(item.badge) + "</span>" : "";
+        card.innerHTML =
+          '<div class="card-top">' +
+            '<div class="logo" style="background:' + escapeAttr(item.color) + ";color:" + escapeAttr(textColor) + '">' + escapeHtml(item.icon_text || "") + "</div>" +
+            '<div class="meta">' +
+              '<div class="name-row"><span class="name">' + escapeHtml(item.name) + "</span>" + badge + "</div>" +
+              '<div class="sub">' + escapeHtml(item.sub || "") + "</div>" +
+            "</div>" +
+          "</div>" +
+          '<p class="desc">' + escapeHtml(item.desc || "") + "</p>" +
+          '<div class="row-actions">' +
+            (item.max != null && item.max !== ""
+              ? '<div class="max">最高 <b>' + escapeHtml(String(item.max)) + "</b> 元</div>"
+              : '<div class="max">金额以当日活动为准</div>') +
+            '<button type="button" class="copy-btn">复制口令</button>' +
+          "</div>" +
+          '<div class="howto-mini">复制后打开「' + escapeHtml(item.app) + "」粘贴领取" + (item.live ? "" : "（示例数据）") + "</div>" +
+          '<div class="fallback"></div>';
+        var btn = card.querySelector(".copy-btn");
+        var fallback = card.querySelector(".fallback");
+        btn.addEventListener("click", function () { onCopy(item, btn, fallback); });
+        listEl.appendChild(card);
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function (ch) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+      });
+    }
+    function escapeAttr(s) {
+      return escapeHtml(s).replace(/`/g, "");
+    }
+
+    function onCopy(item, btn, fallback) {
+      copyText(item.code).then(function () {
+        btn.textContent = "已复制";
+        btn.classList.add("done");
+        fallback.style.display = "none";
+        showToast(item.live ? ("口令已复制，打开" + item.app + "粘贴领取") : ("口令已复制，打开" + item.app + "即可领取（当前是示例数据）"));
+        setTimeout(function () { btn.textContent = "复制口令"; btn.classList.remove("done"); }, 1800);
+      }).catch(function () {
+        fallback.style.display = "block";
+        fallback.textContent = "复制失败，请长按选中后手动复制：" + item.code;
+        showToast("自动复制失败，请长按下方口令手动复制");
+      });
+    }
+
+    document.querySelectorAll(".tab").forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        state.category = tab.getAttribute("data-cat");
+        document.querySelectorAll(".tab").forEach(function (t) {
+          var on = t === tab;
+          t.classList.toggle("active", on);
+          t.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        render();
+      });
+    });
+
+    function truthy(v) {
+      if (v === true || v === 1 || v === "1") return true;
+      if (v && typeof v === "object") {
+        return !!(v.following || v.isFollow || v.isFollowing || v.followed || v.attention);
+      }
+      return false;
+    }
+
+    function setupFollowPrompt() {
+      var bar = document.getElementById("followBar");
+      var toy = getToy();
+      if (!toy) return;
+      bar.classList.add("show");
+      document.getElementById("followSkip").addEventListener("click", function () {
+        bar.classList.remove("show");
+      });
+      document.getElementById("followGo").addEventListener("click", function () {
+        goFollowOrTriple(toy);
+      });
+      Promise.resolve()
+        .then(function () {
+          if (typeof toy.getAuthorRelation === "function") return toy.getAuthorRelation();
+          if (toy.author && typeof toy.author.relation === "function") return toy.author.relation();
+        })
+        .then(function (rel) {
+          if (truthy(rel)) bar.classList.remove("show");
+        })
+        .catch(function () { /* 探测失败也不影响领券 */ });
+    }
+
+    function goFollowOrTriple(toy) {
+      var bvid = (CONFIG.videoBvid || "").trim();
+      var tries = [];
+      if (bvid) tries.push({ type: "video", id: bvid });
+      tries.push({ type: "space" }, { type: "author" });
+      function next(i) {
+        if (i >= tries.length) {
+          showToast("暂时没法跳转，可以回到视频页完成关注或三连");
+          return;
+        }
+        var req = tries[i];
+        var p;
+        try {
+          if (typeof toy.navigate === "function") p = toy.navigate(req);
+          else if (toy.share && typeof toy.share.navigate === "function") p = toy.share.navigate(req);
+          else if (typeof toy.shareTo === "function") p = toy.shareTo(req);
+        } catch (e) { p = Promise.reject(e); }
+        Promise.resolve(p).then(function () {
+          showToast("已尝试打开 B 站页面，不强制关注");
+        }).catch(function () { next(i + 1); });
+      }
+      next(0);
+    }
+
+    (function setupTabs() {
+      var live = (CONFIG.coupons || []).filter(function (c) { return c.live; });
+      var cats = [];
+      live.forEach(function (c) {
+        if (cats.indexOf(c.category) < 0) cats.push(c.category);
+      });
+      var tabBar = document.querySelector(".tabs");
+      if (cats.length <= 1) {
+        tabBar.style.display = "none";
+        if (cats[0]) state.category = cats[0];
+      } else {
+        document.querySelectorAll(".tab").forEach(function (t) {
+          t.style.display = cats.indexOf(t.getAttribute("data-cat")) >= 0 ? "" : "none";
+        });
+      }
+    })();
+    render();
+    function bootFollow() {
+      setupFollowPrompt();
+    }
+    if (getToy()) bootFollow();
+    else {
+      var n = 0;
+      var t = setInterval(function () {
+        n += 1;
+        if (getToy() || n >= 20) {
+          clearInterval(t);
+          if (getToy()) bootFollow();
+        }
+      }, 200);
+    }
+  </script>
+</body>
+</html>

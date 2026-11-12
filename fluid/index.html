@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <title>指尖流体 · 解压彩墨</title>
+        <meta name="description" content="用手指或鼠标在屏幕上滑动，搅出发光的彩墨。">
+        <script type="text/javascript" src="./dat.gui.min.js"></script>
+        <style>
+            * {
+                user-select: none;
+                -webkit-user-select: none;
+                -webkit-touch-callout: none;
+            }
+
+            html, body {
+                overflow: hidden;
+                background-color: #000;
+            }
+
+            body {
+                margin: 0;
+                position: fixed;
+                width: 100%;
+                height: 100%;
+            }
+
+            canvas {
+                width: 100%;
+                height: 100%;
+            }
+
+            .dg {
+                opacity: 0.9;
+            }
+
+            .dg .property-name {
+                overflow: visible;
+            }
+
+            #hint {
+                position: fixed;
+                left: 50%;
+                top: 72%;
+                transform: translate(-50%, -50%);
+                z-index: 2;
+                padding: 14px 22px;
+                border-radius: 999px;
+                background: rgba(0, 0, 0, 0.45);
+                color: rgba(255, 255, 255, 0.92);
+                font: 600 18px/1.4 -apple-system, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+                letter-spacing: 1px;
+                white-space: nowrap;
+                pointer-events: none;
+                transition: opacity 0.6s ease;
+            }
+
+            #hint.hide {
+                opacity: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas></canvas>
+        <div id="hint">用手指或鼠标在屏幕上滑动</div>
+
+        <script src="./script.js"></script>
+        <script>
+            (function () {
+                var hint = document.getElementById('hint');
+                var done = false;
+                function dismiss () {
+                    if (done) return;
+                    done = true;
+                    hint.classList.add('hide');
+                    setTimeout(function () { hint.style.display = 'none'; }, 700);
+                }
+                ['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach(function (ev) {
+                    window.addEventListener(ev, dismiss, { once: true, passive: true });
+                });
+                setTimeout(dismiss, 8000);
+            })();
+        </script>
+    </body>
+</html>
